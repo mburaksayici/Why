@@ -41,7 +41,9 @@ def separate_model(model, layer_index=None):
 
     x = post_explain_input
     for layer_idx in list(model_layers.keys())[layer_index:]:
-        x = model.get_layer(model_layers[layer_idx]["layer_name"])(x)
+        if model_layers[layer_idx]["layer_name"] in ["avg_pool", "predictions"]:
+            print(model_layers[layer_idx]["layer_name"])
+            x = model.get_layer(model_layers[layer_idx]["layer_name"])(x)
 
     post_explain_model = tf.keras.Model(post_explain_input, x)
 
