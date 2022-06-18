@@ -22,18 +22,13 @@ class KerasGradCam:
             inputs = input_array[np.newaxis, ...]
             explaining_conv_layer_output = explaining_conv_layer_model(inputs)
             tape.watch(explaining_conv_layer_output)
-            preds = explaining_conv_layer_model(explaining_conv_layer_output)
+            preds = post_explain_model(explaining_conv_layer_output)
             top_pred_index = tf.argmax(preds[0])
             top_class_channel = preds[:, top_pred_index]
 
         ## will be moved to keras utils
-        grads = tape.gradient(top_class_channel, explaining_conv_layer_model)
+        grads = tape.gradient(top_class_channel, explaining_conv_layer_output)
         pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-
-        explaining_conv_layer_output = explaining_conv_layer_model.numpy()[0]
-        pooled_grads = pooled_grads.numpy()
-        for i in range(pooled_grads.shape[-1]):
-            explaining_conv_layer_output[:, :, i] *= pooled_grads[i]
 
         explaining_conv_layer_output_0 = explaining_conv_layer_output.numpy()[0]
         pooled_grads = pooled_grads.numpy()
@@ -61,7 +56,7 @@ class PyTorchGradCam:
 
     def explain(self, input_array, explain_class=None, layer_name=None):
         if layer_name is None:
-            layer_name = self.utils.get_explainable_layers()[-1]
+            layer_name = self.utils.get_explainable_layers(self.model)[-1]
 
         gcmodel = self._construct_gradcam_model(layer_name)
         out, acts = gcmodel(input_array)

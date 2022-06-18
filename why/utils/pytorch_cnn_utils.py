@@ -36,15 +36,16 @@ class PyTorchGradCamModel(nn.Module):
         out = self.model(x)
         return out, self.selected_out
 
-    class PyTorchUtils:
-        def __init__(
-            self,
-        ):
-            pass
 
-        def get_explainable_layers(self, model):
-            xai_layers = []
-            for name, modules in model.named_modules():
-                if isinstance(modules, torch.nn.Sequential):
-                    xai_layers.append(name)
-            return xai_layers
+class PyTorchUtils:
+    def __init__(
+        self,
+    ):
+        pass
+
+    def get_explainable_layers(self, model):
+        xai_layers = []
+        for name, modules in model.named_modules():
+            if isinstance(modules, torch.nn.Sequential):
+                xai_layers.append(name)
+        return xai_layers
