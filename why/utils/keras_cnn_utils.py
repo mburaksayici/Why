@@ -16,19 +16,26 @@ def get_layers_type(model):
     return model_layers
 
 
-def separate_model(model, layer_index=None):
-    """
-    Separates model into explaining, and post-explain models.
-    """
+def _get_explaining_layer(model, layer_index):
+    # Use last CNN if index not given.
+
     model_layers = get_layers_type(model)
 
-    # Use last CNN if index not given.
     if not layer_index:
         layer_index = [
             i
             for i in list(reversed(list(model_layers.keys())))
             if model_layers[i]["is_cnn"] == True
         ][0]
+    return layer_index, model_layers
+
+
+def separate_model(model, layer_index=None):
+    """
+    Separates model into explaining, and post-explain models.
+    """
+
+    layer_index, model_layers = _get_explaining_layer(model, layer_index=layer_index)
 
     explaining_conv_layer = model.get_layer(model_layers[layer_index]["layer_name"])
     explaining_conv_layer_model = tf.keras.Model(
@@ -41,10 +48,18 @@ def separate_model(model, layer_index=None):
 
     x = post_explain_input
     for layer_idx in list(model_layers.keys())[layer_index:]:
-        if model_layers[layer_idx]["layer_name"] in ["avg_pool", "predictions"]:
-            print(model_layers[layer_idx]["layer_name"])
-            x = model.get_layer(model_layers[layer_idx]["layer_name"])(x)
+        x = model.get_layer(model_layers[layer_idx]["layer_name"])(x)
 
     post_explain_model = tf.keras.Model(post_explain_input, x)
 
     return explaining_conv_layer_model, post_explain_model
+
+
+def create_multioutput_model(model, layer_index=None):
+    layer_index, model_layers = _get_explaining_layer(model, layer_index=layer_index)
+
+    multioutput_model = tf.keras.Model(
+        [model.inputs],
+        [model.get_layer(model_layers[layer_index]["layer_name"]).output, model.output],
+    )
+    return multioutput_model

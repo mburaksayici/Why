@@ -13,21 +13,39 @@ class KerasGradCam:
 
         self.model = model
 
-    def explain(self, input_array, layer_index=None):
+    def explain(self, input_array, layer_index=None, separate=False):
 
-        explaining_conv_layer_model, post_explain_model = separate_model(self.model)
+        if separate:
+            explaining_conv_layer_model, post_explain_model = separate_model(self.model)
 
-        ## will be moved to keras utils
-        with tf.GradientTape() as tape:
-            inputs = input_array[np.newaxis, ...]
-            explaining_conv_layer_output = explaining_conv_layer_model(inputs)
-            tape.watch(explaining_conv_layer_output)
-            preds = post_explain_model(explaining_conv_layer_output)
-            top_pred_index = tf.argmax(preds[0])
-            top_class_channel = preds[:, top_pred_index]
+            ## will be moved to keras utils
+            with tf.GradientTape() as tape:
+                inputs = input_array[np.newaxis, ...]
+                explaining_conv_layer_output = explaining_conv_layer_model(inputs)
+                tape.watch(explaining_conv_layer_output)
+                preds = post_explain_model(explaining_conv_layer_output)
+                top_pred_index = tf.argmax(preds[0])
+                top_class_channel = preds[:, top_pred_index]
 
-        ## will be moved to keras utils
-        grads = tape.gradient(top_class_channel, explaining_conv_layer_output)
+            ## will be moved to keras utils
+            grads = tape.gradient(top_class_channel, explaining_conv_layer_output)
+
+        else:
+
+            multioutput_model = create_multioutput_model(
+                self.model, layer_index=layer_index
+            )
+
+            with tf.GradientTape() as tape:
+                input_array = tf.cast(input_array, tf.float32)
+                tape.watch(input_array)
+                explaining_conv_layer_output, preds = multioutput_model(input_array)
+                loss = preds[:, 0]
+                top_pred_index = tf.argmax(preds[0])
+                top_class_channel = preds[:, top_pred_index]
+
+            grads = tape.gradient(top_class_channel, explaining_conv_layer_output)
+
         pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
         explaining_conv_layer_output_0 = explaining_conv_layer_output.numpy()[0]
