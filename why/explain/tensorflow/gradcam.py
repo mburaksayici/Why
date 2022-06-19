@@ -55,4 +55,11 @@ class KerasGradCam:
         # Clip the values (equivalent to applying ReLU)
         # and then normalise the values
 
-        return explanation
+        # Get image informations
+        shape_list = list(input_array.shape)
+        image_size = [i for i in shape_list if i > 4]
+        channel = max([i for i in shape_list if i < 4])
+
+        visualization = visualize(explanation, image_size, channel)
+
+        return visualization
