@@ -6,12 +6,13 @@ import numpy as np
 from .utils import *
 
 
-class KerasGradCam:
+class GradCam:
     def __init__(self, model) -> None:
         self.model = model
 
-    def explain(self, input_array, class_index=None, layer_index=None, separate=False):
-
+    def explain(
+        self, input_array, explain_class=None, layer_index=None, separate=False
+    ):
         if separate:
             explaining_conv_layer_model, post_explain_model = separate_model(self.model)
 
@@ -21,9 +22,9 @@ class KerasGradCam:
                 explaining_conv_layer_output = explaining_conv_layer_model(inputs)
                 tape.watch(explaining_conv_layer_output)
                 preds = post_explain_model(explaining_conv_layer_output)
-                if not class_index:
-                    class_index = tf.argmax(preds[0])
-                class_index_channel = preds[:, class_index]
+                if not explain_class:
+                    explain_class = tf.argmax(preds[0])
+                explain_class_channel = preds[:, explain_class]
 
             ## will be moved to keras utils
             grads = tape.gradient(top_class_channel, explaining_conv_layer_output)

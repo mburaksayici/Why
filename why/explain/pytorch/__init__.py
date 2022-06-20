@@ -1,1 +1,1 @@
-from .gradcam import PyTorchGradCam
+from .gradcam import GradCam

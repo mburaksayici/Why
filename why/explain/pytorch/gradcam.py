@@ -7,7 +7,7 @@ import numpy as np
 from .utils import *
 
 
-class PyTorchGradCam:
+class GradCam:
     def __init__(self, model) -> None:
 
         self.model = model

@@ -1,1 +1,1 @@
-from .gradcam import KerasGradCam
+from .gradcam import GradCam
