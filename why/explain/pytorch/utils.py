@@ -44,8 +44,22 @@ class PyTorchUtils:
         pass
 
     def get_explainable_layers(self, model):
+        """
         xai_layers = []
+
         for name, modules in model.named_modules():
             if isinstance(modules, torch.nn.Sequential):
                 xai_layers.append(name)
-        return xai_layers
+        """
+
+        return list(model.__dict__["_modules"].keys())
+
+    def visualize(self, map, image_size, channel):
+        """
+        Temporary visualization function
+        """
+        map = 255 * (map - map.min()) / (map.max() - map.min())
+        map = cv2.resize(map, image_size)
+        map = np.stack([map] * channel, -1)
+        map = map.astype(np.uint8)
+        return map

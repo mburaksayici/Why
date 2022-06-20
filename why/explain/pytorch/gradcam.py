@@ -18,7 +18,7 @@ class PyTorchGradCam:
 
     def explain(self, input_array, explain_class=None, layer_name=None):
         if layer_name is None:
-            layer_name = self.utils.get_explainable_layers(self.model)[-1]
+            layer_name = self.utils.get_explainable_layers(self.model)[-2]
 
         gcmodel = self._construct_gradcam_model(layer_name)
         out, acts = gcmodel(input_array)
@@ -26,9 +26,9 @@ class PyTorchGradCam:
         acts = acts.detach()
 
         if explain_class is None:
-            explain_class = 0
+            explain_class = out[0].argmax().item()
 
-        loss = nn.CrossEntropyLoss()(out, torch.from_numpy(np.array([600])))
+        loss = nn.CrossEntropyLoss()(out, torch.from_numpy(np.array([explain_class])))
         loss.backward()
 
         grads = gcmodel.get_act_grads().detach()

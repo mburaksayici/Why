@@ -7,7 +7,7 @@ import numpy as np
 
 def get_layers_type(model):
     """
-    Returns model layer types dict of given Keras Model.
+    Returns model layer types dict of given Keras Model. Mainly used to find CNN layers which are appropriate to explain.
     """
     model_layers = {}
     for idx, layer in enumerate(model.layers):
@@ -58,6 +58,10 @@ def separate_model(model, layer_index=None):
 
 
 def create_multioutput_model(model, layer_index=None):
+    """
+    Creates model that gives explaining layers output, and model's normal output as well.
+    This method is better than separating model into two. Separation and creation of two model is way problematic.
+    """
     layer_index, model_layers = _get_explaining_layer(model, layer_index=layer_index)
 
     multioutput_model = tf.keras.Model(
@@ -68,6 +72,9 @@ def create_multioutput_model(model, layer_index=None):
 
 
 def visualize(map, image_size, channel):
+    """
+    Temporary visualization function
+    """
     map = 255 * (map - map.min()) / (map.max() - map.min())
     map = cv2.resize(map, image_size)
     map = np.stack([map] * channel, -1)
