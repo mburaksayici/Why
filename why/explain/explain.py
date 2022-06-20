@@ -19,9 +19,13 @@ class Explain:
         else:
             return None
 
+    @staticmethod
+    def get_pythonic_cwd():
+        return os.getcwd().strip("/").replace("/", ".")
+
     def _import_method(self, method):
         explanation_module = importlib.import_module(
-            f"explain.{self.model_framework}.{method.lower()}"
+            f"why.explain.{self.model_framework}.{method.lower()}"
         )
         explain_class = getattr(explanation_module, method)
         return explain_class
