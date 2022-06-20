@@ -14,7 +14,7 @@ class Explain:
         model_class_str = str(type(model))
         if "torch" in model_class_str:
             return "pytorch"
-        elif "tensorflow" in model_class_str:
+        elif "tensorflow" in model_class_str or "keras" in model_class_str:
             return "tensorflow"
         else:
             return None
