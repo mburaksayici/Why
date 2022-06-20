@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="Why",
@@ -8,7 +8,7 @@ setup(
     author="Mehmet Burak Sayıcı",
     author_email="burak@gesund.ai",
     license="BSD 2-clause",
-    packages=["why"],
+    packages=find_packages(),
     install_requires=["tensorflow", "numpy", "torch", "torchvision", "opencv-python"],
     classifiers=[
         "Development Status :: 1 - Planning",
