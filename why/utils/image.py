@@ -47,14 +47,13 @@ def overlay_heatmap_on_original_image(
         else:
             original_image = cv2.resize(original_image, image_size)
             original_image = Image.fromarray(original_image)
+        heatmap = np.array(Image.fromarray(heatmap).resize(image_size))
     else:
         image_size = (
             original_image.size
             if is_pil_or_np
             else [i for i in original_image.shape if i > 5]
         )
-
-        heatmap = np.array(Image.fromarray(heatmap).resize(image_size))
 
     color_map = mpl_color_map.get_cmap(colormap_name)
 
