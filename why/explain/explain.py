@@ -67,3 +67,21 @@ class Explain:
             colormap_name=colormap_name,
             return_bytes=return_bytes,
         )
+
+    def resize_heatmap(
+        self,
+        heatmap,
+        filename=None,
+        image_size=None,
+        alpha=0.5,
+        colormap_name="RdYlBu",
+        return_bytes=False,
+    ):
+        return resize_heatmap_wo_original_image(
+        heatmap,
+        filename=None,
+        image_size=image_size,
+        alpha=alpha,
+        colormap_name=colormap_name,
+        return_bytes=False
+    )

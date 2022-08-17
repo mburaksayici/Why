@@ -3,8 +3,8 @@
 import tensorflow as tf
 import numpy as np
 
-from why.utils.image import *
 from .utils import *
+from why.utils.image import *
 
 
 class GradCam:
@@ -45,10 +45,13 @@ class GradCam:
                 tape.watch(input_array)
                 explaining_conv_layer_output, preds = multioutput_model(input_array)
                 loss = preds[:, 0]
-                top_pred_index = tf.argmax(preds[0])
-                top_class_channel = preds[:, top_pred_index]
+                if explain_class:
+                    explain_class_channel = preds[:, explain_class]
+                else:
+                    top_pred_index = tf.argmax(preds[0])
+                    explain_class_channel = preds[:, top_pred_index]
 
-            grads = tape.gradient(top_class_channel, explaining_conv_layer_output)
+            grads = tape.gradient(explain_class_channel, explaining_conv_layer_output)
 
         pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 

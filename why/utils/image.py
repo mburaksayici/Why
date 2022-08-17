@@ -87,3 +87,44 @@ def overlay_heatmap_on_original_image(
             filename = generate_random_name(10) + ".png"
             heatmap_on_image.save(filename)
             return filename
+
+def resize_heatmap_wo_original_image(
+    heatmap,
+    filename=None,
+    image_size=None,
+    alpha=0.5,
+    colormap_name="RdYlBu",
+    return_bytes=False,
+):
+    """
+    Heatmap overlay
+    """
+
+    if image_size:
+        heatmap = np.array(Image.fromarray(heatmap).resize(image_size))
+
+    color_map = mpl_color_map.get_cmap(colormap_name)
+
+    # Change alpha channel in colormap to make sure original image is displayed
+    heatmap_colored = color_map(heatmap[:, :, 0], alpha=alpha)
+    heatmap_colored = (heatmap_colored * 255).astype(np.uint8)
+    heatmap = copy.copy(heatmap_colored)
+
+    heatmap = Image.fromarray((heatmap).astype(np.uint8))
+
+    if return_bytes:
+        img_byte_arr = io.BytesIO()
+        heatmap.save(img_byte_arr, format="PNG")
+        return img_byte_arr.getvalue()
+    else:
+        if filename:
+            is_extension = filename.lower().endswith(
+                (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
+            )
+            filename = filename if is_extension else filename + ".png"
+            heatmap.save(filename)
+            return filename
+        else:
+            filename = generate_random_name(10) + ".png"
+            heatmap.save(filename)
+            return filename
