@@ -69,14 +69,3 @@ def create_multioutput_model(model, layer_index=None):
         [model.get_layer(model_layers[layer_index]["layer_name"]).output, model.output],
     )
     return multioutput_model
-
-
-def visualize(map, image_size, channel):
-    """
-    Temporary visualization function
-    """
-    map = 255 * (map - map.min()) / (map.max() - map.min())
-    map = cv2.resize(map, image_size)
-    map = np.stack([map] * channel, -1)
-    map = map.astype(np.uint8)
-    return map

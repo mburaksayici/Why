@@ -4,6 +4,8 @@ import os
 from .pytorch import *
 from .tensorflow import *
 
+from .explain_utils import *
+
 
 class Explain:
     def __init__(self, model):
@@ -31,10 +33,56 @@ class Explain:
         return explain_class
 
     def explain(
-        self, input_array, explain_class=None, method="GradCam", layer_index=None
+        self,
+        input_array,
+        explain_class=None,
+        method="GradCam",
+        layer_index=None,
+        heatmap_size=None,
     ):
         explanation_class = self._import_method(method)
         explanation_obj = explanation_class(self.model)
         return explanation_obj.explain(
-            input_array=input_array, explain_class=explain_class, layer_index=None
+            input_array=input_array,
+            explain_class=explain_class,
+            layer_index=layer_index,
+            heatmap_size=heatmap_size,
+        )
+
+    def overlay_heatmap(
+        self,
+        original_image,
+        heatmap,
+        filename=None,
+        image_size=None,
+        alpha=0.5,
+        colormap_name="RdYlBu",
+        return_bytes=False,
+    ):
+        return overlay_heatmap_on_original_image(
+            original_image,
+            heatmap,
+            filename=filename,
+            image_size=image_size,
+            alpha=alpha,
+            colormap_name=colormap_name,
+            return_bytes=return_bytes,
+        )
+
+    def resize_heatmap(
+        self,
+        heatmap,
+        filename=None,
+        image_size=None,
+        alpha=0.5,
+        colormap_name="RdYlBu",
+        return_bytes=False,
+    ):
+        return resize_heatmap_wo_original_image(
+            heatmap,
+            filename=None,
+            image_size=image_size,
+            alpha=alpha,
+            colormap_name=colormap_name,
+            return_bytes=False,
         )

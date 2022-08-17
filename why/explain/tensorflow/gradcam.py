@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 
 from .utils import *
+from ..explain_utils import *
 
 
 class GradCam:
@@ -11,7 +12,12 @@ class GradCam:
         self.model = model
 
     def explain(
-        self, input_array, explain_class=None, layer_index=None, separate=False
+        self,
+        input_array,
+        explain_class=None,
+        layer_index=None,
+        heatmap_size=None,
+        separate=False,
     ):
         if separate:
             explaining_conv_layer_model, post_explain_model = separate_model(self.model)
@@ -39,10 +45,13 @@ class GradCam:
                 tape.watch(input_array)
                 explaining_conv_layer_output, preds = multioutput_model(input_array)
                 loss = preds[:, 0]
-                top_pred_index = tf.argmax(preds[0])
-                top_class_channel = preds[:, top_pred_index]
+                if explain_class:
+                    explain_class_channel = preds[:, explain_class]
+                else:
+                    top_pred_index = tf.argmax(preds[0])
+                    explain_class_channel = preds[:, top_pred_index]
 
-            grads = tape.gradient(top_class_channel, explaining_conv_layer_output)
+            grads = tape.gradient(explain_class_channel, explaining_conv_layer_output)
 
         pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
 
@@ -59,8 +68,9 @@ class GradCam:
         # Get image informations
         shape_list = list(input_array.shape)
         image_size = [i for i in shape_list if i > 4]
+        if heatmap_size:
+            image_size = heatmap_size
         channel = max([i for i in shape_list if i < 4])
 
         visualization = visualize(explanation, image_size, channel)
-
         return visualization
