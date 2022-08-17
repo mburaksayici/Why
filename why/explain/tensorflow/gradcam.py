@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 
 from .utils import *
-from why.utils.image import *
+from ..explain_utils import *
 
 
 class GradCam:

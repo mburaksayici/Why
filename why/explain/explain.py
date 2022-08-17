@@ -3,7 +3,8 @@ import os
 
 from .pytorch import *
 from .tensorflow import *
-from why.utils.image import *
+
+from .explain_utils import *
 
 
 class Explain:
@@ -78,10 +79,10 @@ class Explain:
         return_bytes=False,
     ):
         return resize_heatmap_wo_original_image(
-        heatmap,
-        filename=None,
-        image_size=image_size,
-        alpha=alpha,
-        colormap_name=colormap_name,
-        return_bytes=False
-    )
+            heatmap,
+            filename=None,
+            image_size=image_size,
+            alpha=alpha,
+            colormap_name=colormap_name,
+            return_bytes=False,
+        )

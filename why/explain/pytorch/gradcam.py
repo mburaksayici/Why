@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from .utils import *
+from ..explain_utils import *
 
 
 class GradCam:
@@ -16,12 +16,13 @@ class GradCam:
     def _construct_gradcam_model(self, target_layer):
         return PyTorchGradCamModel(self.model, target_layer)
 
-    def explain(self, 
+    def explain(
+        self,
         input_array,
         explain_class=None,
         layer_index=None,
         heatmap_size=None,
-):      
+    ):
         if layer_index is None:
             layer_index = self.utils.get_explainable_layers(self.model)[-2]
 
