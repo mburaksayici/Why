@@ -51,5 +51,4 @@ class PyTorchUtils:
             if isinstance(modules, torch.nn.Sequential):
                 xai_layers.append(name)
         """
-
         return list(model.__dict__["_modules"].keys())

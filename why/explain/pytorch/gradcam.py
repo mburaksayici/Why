@@ -5,6 +5,7 @@ import torch.nn as nn
 import numpy as np
 
 from ..explain_utils import *
+from .utils import PyTorchUtils, PyTorchGradCamModel
 
 
 class GradCam:
@@ -14,7 +15,9 @@ class GradCam:
         self.utils = PyTorchUtils()
 
     def _construct_gradcam_model(self, target_layer):
-        return PyTorchGradCamModel(self.model, target_layer)
+        model = PyTorchGradCamModel(self.model, target_layer)
+        model.eval()
+        return model
 
     def explain(
         self,
@@ -24,7 +27,7 @@ class GradCam:
         heatmap_size=None,
     ):
         if layer_index is None:
-            layer_index = self.utils.get_explainable_layers(self.model)[-2]
+            layer_index = self.utils.get_explainable_layers(self.model)[-3]
 
         gcmodel = self._construct_gradcam_model(layer_index)
         out, acts = gcmodel(input_array)
@@ -41,10 +44,18 @@ class GradCam:
         pooled_grads = torch.mean(grads, dim=[0, 2, 3]).detach().cpu()
 
         for i in range(acts.shape[1]):
-            acts[:, i, :, :] += pooled_grads[i]
+            acts[:, i, :, :] *= pooled_grads[i]
 
         heatmap_j = torch.mean(acts, dim=1).squeeze()
         heatmap_j_max = heatmap_j.max(axis=0)[0]
         heatmap_j /= heatmap_j_max
         explanation = heatmap_j
-        return explanation
+        explanation = explanation.numpy()
+
+        shape_list = list(input_array.shape)
+        image_size = [i for i in shape_list if i > 4]
+        channel = max([i for i in shape_list if i < 4])
+
+        visualization = visualize(explanation, image_size, channel)
+
+        return visualization

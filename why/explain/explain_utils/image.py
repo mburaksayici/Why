@@ -26,6 +26,13 @@ def visualize(map, image_size, channel):
     return map
 
 
+def array_handler(dl_array):
+    if "torch" in str(type(dl_array)):
+        return dl_array.numpy()
+    else:
+        return dl_array
+
+
 def overlay_heatmap_on_original_image(
     original_image,
     heatmap,
@@ -47,6 +54,8 @@ def overlay_heatmap_on_original_image(
         else:
             original_image = cv2.resize(original_image, image_size)
             original_image = Image.fromarray(original_image)
+
+        heatmap = array_handler(heatmap)
         heatmap = np.array(Image.fromarray(heatmap).resize(image_size))
     else:
         image_size = (
