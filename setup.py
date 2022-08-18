@@ -16,7 +16,7 @@ setup(
     author="Mehmet Burak Sayıcı",
     author_email="burak@gesund.ai",
     license="BSD 2-clause",
-    install_requires=["tensorflow", "numpy", "torch", "torchvision", "opencv-python"],
+    install_requires=["tensorflow", "numpy", "torch", "torchvision", "opencv-python", "matplotlib"],
     classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: Science/Research",
