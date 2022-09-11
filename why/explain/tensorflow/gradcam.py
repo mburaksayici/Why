@@ -18,6 +18,7 @@ class GradCam:
         layer_index=None,
         heatmap_size=None,
         separate=False,
+        return_class=False,
     ):
         if separate:
             explaining_conv_layer_model, post_explain_model = separate_model(self.model)
@@ -73,4 +74,7 @@ class GradCam:
         channel = max([i for i in shape_list if i < 4])
 
         visualization = visualize(explanation, image_size, channel)
+
+        if return_class:
+            return visualization, explain_class
         return visualization

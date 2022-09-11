@@ -39,14 +39,17 @@ class Explain:
         method="GradCam",
         layer_index=None,
         heatmap_size=None,
+        return_class=False,
     ):
         explanation_class = self._import_method(method)
         explanation_obj = explanation_class(self.model)
+
         return explanation_obj.explain(
             input_array=input_array,
             explain_class=explain_class,
             layer_index=layer_index,
             heatmap_size=heatmap_size,
+            return_class=return_class,
         )
 
     def overlay_heatmap(
@@ -68,6 +71,76 @@ class Explain:
             colormap_name=colormap_name,
             return_bytes=return_bytes,
         )
+
+    def annotate(
+        self,
+        input_array,
+        image_size,
+        threshold=0.7,
+        explain_class=None,
+        method="GradCam",
+        layer_index=None,
+    ):
+        explanation_class = self._import_method(method)
+        explanation_obj = explanation_class(self.model)
+
+        heatmap, explain_class = explanation_obj.explain(
+            input_array=input_array,
+            explain_class=explain_class,
+            layer_index=layer_index,
+            heatmap_size=None,
+            return_class=True,
+        )
+
+        resized_heatmap = resize_heatmap_wo_original_image(
+            heatmap,
+            filename=None,
+            image_size=image_size,
+            alpha=1,
+            colormap_name="jet",
+            return_bytes=False,
+        )
+        np_heatmap = np.array(resized_heatmap)
+        mask = np_heatmap > int(threshold * 255)
+        return create_polygon(mask[:, :, 0])
+
+    def extract_area(
+        self,
+        input_array,
+        original_image,
+        threshold=0.7,
+        explain_class=None,
+        method="GradCam",
+        layer_index=None,
+    ):
+        explanation_class = self._import_method(method)
+        explanation_obj = explanation_class(self.model)
+
+        heatmap, explain_class = explanation_obj.explain(
+            input_array=input_array,
+            explain_class=explain_class,
+            layer_index=layer_index,
+            heatmap_size=None,
+            return_class=True,
+        )
+
+        resized_heatmap = resize_heatmap_wo_original_image(
+            heatmap,
+            filename=None,
+            image_size=original_image.size,
+            alpha=1,
+            colormap_name="jet",
+            return_bytes=False,
+        )
+        np_heatmap = np.array(resized_heatmap)
+        mask = (np_heatmap > int(threshold * 255))[:, :, 0]
+
+        np_original_image = np.array(original_image)
+        extracted_area = []
+        for i in range(np_original_image.shape[-1]):
+            extracted_area.append(mask * np_original_image[:, :, i])
+        extracted_area = np.stack(extracted_area, 2)
+        return Image.fromarray(extracted_area)
 
     def resize_heatmap(
         self,
