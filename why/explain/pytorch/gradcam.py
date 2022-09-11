@@ -25,6 +25,7 @@ class GradCam:
         explain_class=None,
         layer_index=None,
         heatmap_size=None,
+        return_class=False,
     ):
         if layer_index is None:
             layer_index = self.utils.get_explainable_layers(self.model)[-3]
@@ -57,5 +58,6 @@ class GradCam:
         channel = max([i for i in shape_list if i < 4])
 
         visualization = visualize(explanation, image_size, channel)
-
+        if return_class:
+            return visualization, explain_class
         return visualization

@@ -135,6 +135,17 @@ def resize_heatmap_wo_original_image(
             heatmap.save(filename)
             return filename
         else:
-            filename = generate_random_name(10) + ".png"
-            heatmap.save(filename)
-            return filename
+            return heatmap
+
+
+def create_polygon(mask):
+
+    contours, _ = cv2.findContours(
+        mask.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE
+    )
+    polygons = []
+    for object in contours:
+        for point in object:
+            polygons.append({"x": int(point[0][0]), "y": int(point[0][1])})
+        break
+    return polygons
