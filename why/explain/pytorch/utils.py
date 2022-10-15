@@ -50,5 +50,7 @@ class PyTorchUtils:
         for name, modules in model.named_modules():
             if isinstance(modules, torch.nn.Sequential):
                 xai_layers.append(name)
+
+        TO DO: Work on blocked models
         """
         return list(model.__dict__["_modules"].keys())
