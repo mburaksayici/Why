@@ -12,6 +12,7 @@ class GradCamPlusPlus:
     Gradcam++, referenced from : https://github.com/adityac94/Grad_CAM_plus_plus/blob/master/misc/utils.py
     Lots of different implementations with significant differences from paper/other implementations. Sticking to original one.
     """
+
     def __init__(self, model) -> None:
         self.model = model
 
@@ -58,32 +59,50 @@ class GradCamPlusPlus:
             grads = tape.gradient(explain_class_channel, explaining_conv_layer_output)
 
         # Grads
-        grads = grads*tf.exp(explain_class_channel) 
+        grads = grads * tf.exp(explain_class_channel)
         grads_2 = grads**2
-        grads_3 = grads_2 *grads
+        grads_3 = grads_2 * grads
 
         explaining_conv_layer_output = explaining_conv_layer_output.numpy()
 
-        global_sum = np.sum(explaining_conv_layer_output[0].reshape((-1,grads[0].shape[2])), axis=0)
+        global_sum = np.sum(
+            explaining_conv_layer_output[0].reshape((-1, grads[0].shape[2])), axis=0
+        )
 
         alpha_num = grads_2[0]
-        alpha_denom = grads_2[0]*2.0 + grads_3[0]*global_sum.reshape((1,1,grads[0].shape[2]))
-        alpha_denom = np.where(alpha_denom != 0.0, alpha_denom, np.ones(alpha_denom.shape))
-        alphas = alpha_num/alpha_denom
+        alpha_denom = grads_2[0] * 2.0 + grads_3[0] * global_sum.reshape(
+            (1, 1, grads[0].shape[2])
+        )
+        alpha_denom = np.where(
+            alpha_denom != 0.0, alpha_denom, np.ones(alpha_denom.shape)
+        )
+        alphas = alpha_num / alpha_denom
 
         weights = np.maximum(grads[0], 0.0)
 
         alphas_thresholding = np.where(weights, alphas, 0.0)
 
-        alpha_normalization_constant = np.sum(np.sum(alphas_thresholding, axis=0),axis=0)
-        alpha_normalization_constant_processed = np.where(alpha_normalization_constant != 0.0, alpha_normalization_constant, np.ones(alpha_normalization_constant.shape))
+        alpha_normalization_constant = np.sum(
+            np.sum(alphas_thresholding, axis=0), axis=0
+        )
+        alpha_normalization_constant_processed = np.where(
+            alpha_normalization_constant != 0.0,
+            alpha_normalization_constant,
+            np.ones(alpha_normalization_constant.shape),
+        )
 
-        alphas /= alpha_normalization_constant_processed.reshape((1,1,grads[0].shape[2]))
+        alphas /= alpha_normalization_constant_processed.reshape(
+            (1, 1, grads[0].shape[2])
+        )
         alphas = alphas.numpy()
 
-        deep_linearization_weights = np.sum((weights*alphas).reshape((-1,grads[0].shape[2])),axis=0)
-        #print deep_linearization_weights
-        heatmap = np.sum(deep_linearization_weights*explaining_conv_layer_output[0], axis=2)
+        deep_linearization_weights = np.sum(
+            (weights * alphas).reshape((-1, grads[0].shape[2])), axis=0
+        )
+        # print deep_linearization_weights
+        heatmap = np.sum(
+            deep_linearization_weights * explaining_conv_layer_output[0], axis=2
+        )
 
         # Passing through ReLU
         explanation = np.maximum(heatmap, 0)
