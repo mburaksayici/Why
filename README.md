@@ -13,7 +13,7 @@
 
 - To be done
 
-#### How to install
+#### How to install
 
 ```
 pip install Why-XAI==0.1.0
