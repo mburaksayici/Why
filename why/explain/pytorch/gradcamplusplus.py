@@ -51,10 +51,8 @@ class GradCamPlusPlus:
         
         grads_2 = grads**2#*out[0,explain_class].exp()
         grads_3 = grads**3#*out[0,explain_class].exp()
-        #breakpoint()
         activation_constants = acts.sum((2,3))
 
-        #breakpoint()
         num = grads_2
         denom = 2* grads_2 + (activation_constants.reshape((1,-1,1,1))*grads_3)
         denom = torch.where(denom != 0.0, denom, torch.ones(denom.shape))

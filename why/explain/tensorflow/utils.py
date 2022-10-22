@@ -22,7 +22,6 @@ def _get_explaining_layer(model, layer_index):
     # Use last CNN if index not given.
 
     model_layers = get_layers_type(model)
-
     if not layer_index:
         layer_index = [
             i
