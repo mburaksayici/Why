@@ -7,11 +7,17 @@
 #### Gradcam Methods
 
 - GradCam   : Implemented for classification problems, for PyTorch and Tensorflow/Keras.
-- GradCam++ : Implementation on the way.
+- GradCam++ : Implemented for classification problems, for PyTorch and Tensorflow/Keras.
 
 #### Weights Analysis
 
 - To be done
+
+#### How to install
+
+```
+pip install Why-XAI==0.1.0
+```
 
 #### How to run? 
 
