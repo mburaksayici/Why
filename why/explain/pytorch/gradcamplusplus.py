@@ -32,9 +32,11 @@ class GradCamPlusPlus:
             layer_index = self.utils.get_explainable_layers(self.model)[-2]
 
         gcmodel = self._construct_gradcam_model(layer_index)
-        out, acts = gcmodel(input_array)
+        out, explaining_conv_layer_output = gcmodel(input_array)
 
-        activations = acts.detach()
+        # If softmax not included, softmax the output. In PyTorch, softmax sometimes added to loss function.
+        if out.max()>1:
+            out = torch.nn.functional.softmax(out)
 
         if explain_class is None:
             explain_class = out[0].argmax().item()
@@ -48,73 +50,51 @@ class GradCamPlusPlus:
 
           # Ref to original implementation : https://github.com/adityac94/Grad_CAM_plus_plus/blob/master/misc/utils.py
         # Second Grads
-        
-        grads_2 = grads**2#*out[0,explain_class].exp()
-        grads_3 = grads**3#*out[0,explain_class].exp()
-        activation_constants = acts.sum((2,3))
+        grads = grads*out[0,explain_class].exp()
+        grads_2 = grads**2 
+        grads_3 = grads**3 
 
-        num = grads_2
-        denom = 2* grads_2 + (activation_constants.reshape((1,-1,1,1))*grads_3)
-        denom = torch.where(denom != 0.0, denom, torch.ones(denom.shape))
+        global_sum = explaining_conv_layer_output.sum((2,3))
 
-        aik = num/denom
-        
-        # Eliminate zeros on grads 
-        grads = torch.max(grads,torch.tensor([0.]))
+        alpha_num = grads_2
+        alpha_denom = 2* grads_2 + (global_sum.reshape((1,-1,1,1))*grads_3)
+        alpha_denom = torch.where(alpha_denom != 0.0, alpha_denom, torch.ones(alpha_denom.shape))
+        alphas = alpha_num/alpha_denom
 
-        weights = torch.where(grads!=0, aik, 0.0) 
-        # (grads*aik).sum((0,2,3)).reshape(1,-1,1,1)alphas_thresholding = 
+        weights = torch.clamp(grads,0) 
 
-        threshold_aik = torch.where(grads, aik>0, 0)
+        # Convert to numpy to stick with original implementation
+        weights = weights.detach().numpy()
+        alphas = alphas.detach().numpy()
 
-        aik_norm_constant = torch.sum(torch.sum(threshold_aik,0),0)
-        
 
-        heatmap_base =  torch.clamp(grads*weights,min=0) 
+        alphas_thresholding = np.where(weights,alphas, 0.0)
 
-        heatmap_j = torch.mean(heatmap_base, dim=1).squeeze()
-        heatmap_j_max = heatmap_j.max(axis=0)[0]
-        heatmap_j /= heatmap_j_max
-        explanation = heatmap_j.detach().numpy()
-        explanation = explanation
+        alpha_normalization_constant = alphas_thresholding.sum((0,2,3))
+        alpha_normalization_constant_preprocessed = np.where(alpha_normalization_constant != 0.0, alpha_normalization_constant, np.ones(alpha_normalization_constant.shape))
 
+        alphas /= alpha_normalization_constant_preprocessed.reshape(1,-1,1,1)
+
+        deep_linearization_weights = np.sum((weights*alphas).reshape((-1,grads.shape[1])),axis=0)
+        deep_linearization_weights = deep_linearization_weights.reshape(1,grads.shape[1],1,1)
+        # Detach acts to numpy
+        explaining_conv_layer_output = explaining_conv_layer_output.detach().numpy()
+
+        heatmap = np.sum(deep_linearization_weights*explaining_conv_layer_output[0], axis=1)[0]
+
+        # Passing through ReLU
+        explanation = np.maximum(heatmap, 0)
+
+        # Get image informations
         shape_list = list(input_array.shape)
         image_size = [i for i in shape_list if i > 4]
+        if heatmap_size:
+            image_size = heatmap_size
         channel = max([i for i in shape_list if i < 4])
 
         visualization = visualize(explanation, image_size, channel)
+
         if return_class:
             return visualization, explain_class
         return visualization
 
-        """
-        # Ref to original implementation : https://github.com/adityac94/Grad_CAM_plus_plus/blob/master/misc/utils.py
-        # Second Grads
-        
-        grads_2 = (grads**2)*out[0,explain_class].exp()
-        grads_3 = (grads_2**3)*out[0,explain_class].exp()
-        #breakpoint()
-        activation_constants = acts.sum((2,3))
-
-        aik = grads_2 / (2* grads_2 + (activation_constants.reshape((1,-1,1,1))*grads_3) + 0.00000001)
-
-        grads = torch.where(grads<0,0,grads)
-        
-        weights = (grads*aik).sum((0,2,3)).reshape(1,-1,1,1)
-        heatmap_base =  torch.clamp(grads*weights,min=0) 
-
-        heatmap_j = torch.mean(heatmap_base, dim=1).squeeze()
-        heatmap_j_max = heatmap_j.max(axis=0)[0]
-        heatmap_j /= heatmap_j_max
-        explanation = heatmap_j.detach().numpy()
-        explanation = explanation
-
-        shape_list = list(input_array.shape)
-        image_size = [i for i in shape_list if i > 4]
-        channel = max([i for i in shape_list if i < 4])
-
-        visualization = visualize(explanation, image_size, channel)
-        if return_class:
-            return visualization, explain_class
-        return visualization
-        """

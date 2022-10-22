@@ -56,7 +56,7 @@ class GradCamPlusPlus:
                     explain_class_channel = preds[:, top_pred_index]
 
             grads = tape.gradient(explain_class_channel, explaining_conv_layer_output)
-        
+
         # Grads
         grads = grads*tf.exp(explain_class_channel) 
         grads_2 = grads**2
@@ -81,7 +81,6 @@ class GradCamPlusPlus:
         alphas /= alpha_normalization_constant_processed.reshape((1,1,grads[0].shape[2]))
         alphas = alphas.numpy()
 
-        
         deep_linearization_weights = np.sum((weights*alphas).reshape((-1,grads[0].shape[2])),axis=0)
         #print deep_linearization_weights
         heatmap = np.sum(deep_linearization_weights*explaining_conv_layer_output[0], axis=2)
