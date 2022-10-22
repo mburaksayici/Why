@@ -8,13 +8,13 @@ packages.append("why")
 
 
 setup(
-    name="Why",
+    name="Why-XAI",
     version="0.1.0",
-    description="A example Python package",
+    description="Framework-agnostic CNN XAI Library",
     url="https://github.com/mburaksayici",
     packages=packages,
     author="Mehmet Burak Sayıcı",
-    author_email="burak@gesund.ai",
+    author_email="mburaksayici@gmail.com",
     license="BSD 2-clause",
     install_requires=["tensorflow", "numpy", "torch", "torchvision", "opencv-python", "matplotlib"],
     classifiers=[
