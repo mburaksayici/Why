@@ -9,6 +9,12 @@
 - GradCam   : Implemented for classification problems, for PyTorch and Tensorflow/Keras.
 - GradCam++ : Implemented for classification problems, for PyTorch and Tensorflow/Keras.
 
+
+#### Weights Analysis
+
+- Example(Prototype) based methods such as ProtoPNet and/or https://github.com/anguyen8/visual-correspondence-XAI
+
+
 #### Weights Analysis
 
 - To be done
