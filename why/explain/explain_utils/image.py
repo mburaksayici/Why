@@ -45,24 +45,30 @@ def overlay_heatmap_on_original_image(
     """
     Heatmap overlay
     """
-    # Check if image is PIL or NumPy
-    is_pil_or_np = True if "PIL" in str(type(original_image)) else False
-
+    # Check if image is PIL=1 or NumPy=0 or path=2
+    mode = 1 if "PIL" in str(type(original_image)) else 0
+    mode = 2 if type(original_image) == str else mode
     if image_size:
-        if is_pil_or_np:
+        if mode == 1:
             original_image = original_image.resize(image_size)
-        else:
+        elif mode == 0:
             original_image = cv2.resize(original_image, image_size)
             original_image = Image.fromarray(original_image)
+        else:
+            original_image = Image.open(original_image)
 
         heatmap = array_handler(heatmap)
         heatmap = np.array(Image.fromarray(heatmap).resize(image_size))
     else:
-        image_size = (
-            original_image.size
-            if is_pil_or_np
-            else [i for i in original_image.shape if i > 5]
-        )
+        if mode == 2:
+            original_image = Image.open(original_image)
+            image_size = original_image.size
+        else:
+            image_size = (
+                original_image.size
+                if mode
+                else [i for i in original_image.shape if i > 5]
+            )
 
     color_map = mpl_color_map.get_cmap(colormap_name)
 
