@@ -1,6 +1,6 @@
 import pickle
 import logging
-import os 
+import os
 
 import torch
 import torch.nn as nn
@@ -20,12 +20,13 @@ class RunningParams(object):
     Official Paper Implementation Parameters
     https://github.com/anguyen8/visual-correspondence-XAI/blob/bcbe601352ff1bb641d540681b972ceef172657b/EMD-Corr/src/params.py
     """
+
     def __init__(self):
         self.VISUALIZATION = False
         self.UNIFORM = False
         self.MIX_DISTANCE = False
         # Calculate distance of two images based on 5 patches only (not entire image)
-        self.CLOSEST_PATCH_COMPARISON = False#True
+        self.CLOSEST_PATCH_COMPARISON = False  # True
         self.IMAGENET_REAL = False
         self.INAT = False
         self.Deformable_ProtoPNet = False
@@ -53,7 +54,10 @@ class RunningParams(object):
             self.CLOSEST_PATCH_COMPARISON = True
             self.K_value = 300
             self.MajorityVotes_K = 20
+
+
 RunningParams = RunningParams()
+
 
 class VisualCorrespondence:
     def __init__(self, model):
@@ -65,7 +69,7 @@ class VisualCorrespondence:
     def _load_pickle(self, file_path):
         with open(file_path, "rb") as f:
             return pickle.load(f)
-    
+
     # Paper calculation related functions
     def _construct_feature_extractor(self, target_layer):
         model = PyTorchGradCamModel(self.model, target_layer)
@@ -76,7 +80,7 @@ class VisualCorrespondence:
         # Paper suggests k = 20
         nn_ = KNeighborsClassifier(n_neighbors=20, algorithm="auto", metric="cosine")
         x = np.array(x)
-        x = x.reshape( *x.shape[:-4],-1 )
+        x = x.reshape(*x.shape[:-4], -1)
 
         nn_.fit(x, y)
 
@@ -111,12 +115,10 @@ class VisualCorrespondence:
         T = torch.matmul(r.unsqueeze(-1), c.unsqueeze(-2)) * K
         return T, solution
 
-    def compute_emd_sim(
-     self, K_value, fb_center, fb, use_uniform, num_patch
-    ):
+    def compute_emd_sim(self, K_value, fb_center, fb, use_uniform, num_patch):
         cc_q2g_maps = []
         cc_g2q_maps = []
-        
+
         query = fb[0].cpu().detach().numpy()
         for i in range(K_value):
             gallery = fb[i].cpu().detach().numpy()
@@ -183,7 +185,6 @@ class VisualCorrespondence:
             sim = torch.sum(T * sim, dim=(1, 2))
         return sim, cc_q2g_maps, cc_g2q_maps, T
 
-
     def compute_spatial_similarity(self, conv1, conv2):
         """
         Takes in the last convolutional layer from two images, computes the pooled output
@@ -208,7 +209,6 @@ class VisualCorrespondence:
         similarity2 = np.reshape(np.sum(im_similarity, axis=0), out_sz)
         return similarity1, similarity2
 
-
     # classmethod so that we do not need to instantiate
     def compute_emd_distance(self, K_value, fb_center, fb, use_uniform, num_patch):
         fb = torch.from_numpy(fb)
@@ -227,61 +227,62 @@ class VisualCorrespondence:
 
     def _create_emd(self, fb_center, distance_dict):
         fb_list = [fb_center] + [i["feature"] for i in distance_dict]
-        fb = np.vstack(fb_list) 
-        fb_center = np.vstack([fb_center]*len(fb_list))
-        
-        num_patch = 5 # distance_dict[0]["shape"][2:]
-        K_value = min(RunningParams.K_value, len(fb_list) )
+        fb = np.vstack(fb_list)
+        fb_center = np.vstack([fb_center] * len(fb_list))
+
+        num_patch = 5  # distance_dict[0]["shape"][2:]
+        K_value = min(RunningParams.K_value, len(fb_list))
 
         emd_distance, q2g_att, g2q_att, opt_plan = self.compute_emd_distance(
-                        K_value  , fb_center, fb, RunningParams.UNIFORM, num_patch
-                        )
+            K_value, fb_center, fb, RunningParams.UNIFORM, num_patch
+        )
 
+        emd_distance = emd_distance[1:]  # Remove the Query itself from distance array
+        q2g_att = q2g_att[1:]  # Remove the Query itself from heatmap array
+        g2q_att = g2q_att[1:]  # Remove the Query itself from heatmap array
+        return emd_distance, q2g_att, g2q_att
 
-        emd_distance = emd_distance[1:] # Remove the Query itself from distance array
-        q2g_att = q2g_att[1:] # Remove the Query itself from heatmap array
-        g2q_att = g2q_att[1:] # Remove the Query itself from heatmap array
-        return emd_distance, q2g_att, g2q_att  
-
-
-
-    def setup(self, preprocess_function, training_data, artifacts_filename="visual_correspondence"):
-        features_exists = os.path.isfile(artifacts_filename+"_dist.pkl")
-        knn_exists = os.path.isfile(artifacts_filename+"_knn.pkl")
-        if (knn_exists and features_exists):
+    def setup(
+        self,
+        preprocess_function,
+        training_data,
+        artifacts_filename="visual_correspondence",
+    ):
+        features_exists = os.path.isfile(artifacts_filename + "_dist.pkl")
+        knn_exists = os.path.isfile(artifacts_filename + "_knn.pkl")
+        if knn_exists and features_exists:
             self.preprocess_function = preprocess_function
             self.artifacts_present = True
             self.artifacts_filename = artifacts_filename
-            
+
             layer_index = self.utils.get_explainable_layers(self.model)[-2]
             self.feature_extractor = self._construct_feature_extractor(layer_index)
 
         else:
-            # If first time, kNN and features for training set will be extracted
+            # If first time, kNN and features for training set will be extracted
             self.artifacts_filename
             self.preprocess_function = preprocess_function
             #  Create feature extractor model
             layer_index = self.utils.get_explainable_layers(self.model)[-2]
             self.feature_extractor = self._construct_feature_extractor(layer_index)
-        
+
             distance_list = training_data.copy()
             logging.info("Creating feature extractions for Visual Correspondence")
             for image_dict in tqdm(distance_list):
                 preprocessed_image = self.preprocess_function(image_dict["image_path"])
                 model_prediction, feature = self.feature_extractor(preprocessed_image)
-                    
+
                 image_dict["feature"] = feature.detach().numpy()
-                image_dict["shape"] =  np.array(feature.shape)
-            
+                image_dict["shape"] = np.array(feature.shape)
+
             with open(f"{artifacts_filename}_dist.pkl", "wb") as fp:
                 pickle.dump(distance_list, fp)
 
             knn_x = [i["feature"] for i in distance_list]
             knn_y = [i["class"] for i in distance_list]
-        
+
             self._create_knn(knn_x, knn_y, artifacts_filename)
-        
-        
+
     def explain(self, input_array=None, image_path=None):
         nn_ = self._load_pickle(f"{self.artifacts_filename}_knn.pkl")
         dist_ = self._load_pickle(f"{self.artifacts_filename}_dist.pkl")
@@ -292,23 +293,26 @@ class VisualCorrespondence:
         feature = feature.detach().numpy()
         # kNN already predicts the closest images. So we need to filter predicted class results first.
         # In the first stage, we select the N images having the lowest cosine distance
-        closest_indices = nn_.kneighbors(feature.reshape(1, -1),  n_neighbors = 50)[-1].flatten().tolist()
-        
+        closest_indices = (
+            nn_.kneighbors(feature.reshape(1, -1), n_neighbors=50)[-1]
+            .flatten()
+            .tolist()
+        )
+
         # Then, we'll rerank this 50 images, to 20 by emd.
-    
+
         emd_dist_ = []
         ref_dict = dict()
-        for  i, closest_index in enumerate(closest_indices):
+        for i, closest_index in enumerate(closest_indices):
             emd_dist_.append(dist_[closest_index])
             ref_dict[i] = closest_index
 
-        emd_distance, q2g_att, g2q_att   = self._create_emd(feature, emd_dist_)
-        
+        emd_distance, q2g_att, g2q_att = self._create_emd(feature, emd_dist_)
+
         for i in range(len(emd_dist_)):
             emd_dist_[i].pop("feature")
             emd_dist_[i].pop("shape")
-            emd_dist_[i]["similarity_rank"] = i+1
+            emd_dist_[i]["similarity_rank"] = i + 1
             emd_dist_[i]["heatmap"] = q2g_att[i].detach().numpy()
 
         return emd_dist_
-
