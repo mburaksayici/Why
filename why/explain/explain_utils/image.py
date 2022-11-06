@@ -97,11 +97,11 @@ def overlay_heatmap_on_original_image(
             )
             filename = filename if is_extension else filename + ".png"
             heatmap_on_image.save(filename)
-            return filename
+            return heatmap_on_image, filename
         else:
             filename = generate_random_name(10) + ".png"
             heatmap_on_image.save(filename)
-            return filename
+            return heatmap_on_image, filename
 
 
 def resize_heatmap_wo_original_image(

@@ -31,22 +31,16 @@ class VisualCorrespondenceExplainer:
         explain_class = getattr(explanation_module, "VisualCorrespondence")
         return explain_class
 
-    def setup(self, preprocess_function=None, training_data=None):
+    def setup(self, preprocess_function=None, training_data=None, artifacts_filename = "visual_correspondence"):
         """
         preprocess_function : function that takes image url and preprocess.
         training_data : training data in the {"image_path":"class0image.png","class":0,}
         """
         visual_correspondence_class = self._import_method()
         self.visual_corresponder = visual_correspondence_class(self.model)
-        self.visual_corresponder.setup(preprocess_function, training_data)
-
-    def reload(self,preprocess_function):
-        visual_correspondence_class = self._import_method()
-        self.visual_corresponder = visual_correspondence_class(self.model)
-        self.visual_corresponder.reload(preprocess_function)
+        self.visual_corresponder.setup(preprocess_function, training_data, artifacts_filename= artifacts_filename)
 
     def explain(self, input_array=None, image_path=None):
-
         return self.visual_corresponder.explain(input_array=input_array, image_path=image_path)
 
     def overlay_heatmap(self, image_path,heatmap,filename=None,image_size=None,alpha=0.5,colormap_name=None, return_bytes = False):
