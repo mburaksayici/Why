@@ -1,5 +1,6 @@
 import pickle
 import logging
+import os 
 
 import torch
 import torch.nn as nn
@@ -58,7 +59,8 @@ class VisualCorrespondence:
     def __init__(self, model):
         self.model = model
         self.utils = PyTorchUtils()
-        
+        self.artifacts_present = False
+
     # TO DO : Move to data utils
     def _load_pickle(self, file_path):
         with open(file_path, "rb") as f:
@@ -70,7 +72,7 @@ class VisualCorrespondence:
         model.eval()
         return model
 
-    def _create_knn(self, x, y):
+    def _create_knn(self, x, y, artifacts_filename):
         # Paper suggests k = 20
         nn_ = KNeighborsClassifier(n_neighbors=20, algorithm="auto", metric="cosine")
         x = np.array(x)
@@ -84,7 +86,7 @@ class VisualCorrespondence:
         score = accuracy_score(y, pred_y)
         logging.info(f"Accuracy score of kNN is {score}")
 
-        with open("visual_correspondence_knn.pkl", "wb") as fp:
+        with open(f"{artifacts_filename}_knn.pkl", "wb") as fp:
             pickle.dump(nn_, fp)
 
     def Sinkhorn(self, K, u, v):
@@ -243,61 +245,50 @@ class VisualCorrespondence:
 
 
 
-    def setup(self, preprocess_function, training_data):
-        self.preprocess_function = preprocess_function
-        #  Create feature extractor model
-        layer_index = self.utils.get_explainable_layers(self.model)[-2]
-        self.feature_extractor = self._construct_feature_extractor(layer_index)
-        """
-        distance_list = training_data.copy()
-        logging.info("Creating feature extractions for Visual Correspondence")
-        for image_dict in tqdm(distance_list):
-            preprocessed_image = self.preprocess_function(image_dict["image_path"])
-            model_prediction, feature = self.feature_extractor(preprocessed_image)
-                
-            image_dict["feature"] = feature.detach().numpy()
-            image_dict["shape"] =  np.array(feature.shape)
-        with open("visual_correspondence_dist.pkl", "wb") as fp:
-            pickle.dump(distance_list, fp)
-        # Create data for kNN
-        """
+    def setup(self, preprocess_function, training_data, artifacts_filename="visual_correspondence"):
+        features_exists = os.path.isfile(artifacts_filename+"_dist.pkl")
+        knn_exists = os.path.isfile(artifacts_filename+"_knn.pkl")
+        if (knn_exists and features_exists):
+            self.preprocess_function = preprocess_function
+            self.artifacts_present = True
+            self.artifacts_filename = artifacts_filename
+            
+            layer_index = self.utils.get_explainable_layers(self.model)[-2]
+            self.feature_extractor = self._construct_feature_extractor(layer_index)
+
+        else:
+            # If first time, kNN and features for training set will be extracted
+            self.artifacts_filename
+            self.preprocess_function = preprocess_function
+            #  Create feature extractor model
+            layer_index = self.utils.get_explainable_layers(self.model)[-2]
+            self.feature_extractor = self._construct_feature_extractor(layer_index)
         
-        distance_list = self._load_pickle("visual_correspondence_dist.pkl")
-        #
-        knn_x = [i["feature"] for i in distance_list]
-        knn_y = [i["class"] for i in distance_list]
-       
-        self._create_knn(knn_x, knn_y)
+            distance_list = training_data.copy()
+            logging.info("Creating feature extractions for Visual Correspondence")
+            for image_dict in tqdm(distance_list):
+                preprocessed_image = self.preprocess_function(image_dict["image_path"])
+                model_prediction, feature = self.feature_extractor(preprocessed_image)
+                    
+                image_dict["feature"] = feature.detach().numpy()
+                image_dict["shape"] =  np.array(feature.shape)
+            
+            with open(f"{artifacts_filename}_dist.pkl", "wb") as fp:
+                pickle.dump(distance_list, fp)
 
-    def reload(self,  preprocess_function):
-        self.preprocess_function = preprocess_function
-        layer_index = self.utils.get_explainable_layers(self.model)[-2]
-        self.feature_extractor = self._construct_feature_extractor(layer_index)
-
+            knn_x = [i["feature"] for i in distance_list]
+            knn_y = [i["class"] for i in distance_list]
+        
+            self._create_knn(knn_x, knn_y, artifacts_filename)
+        
         
     def explain(self, input_array=None, image_path=None):
-        nn_ = self._load_pickle("visual_correspondence_knn.pkl")
-        dist_ = self._load_pickle("visual_correspondence_dist.pkl")
+        nn_ = self._load_pickle(f"{self.artifacts_filename}_knn.pkl")
+        dist_ = self._load_pickle(f"{self.artifacts_filename}_dist.pkl")
         if image_path:
             input_array = self.preprocess_function(image_path)
 
         model_prediction, feature = self.feature_extractor(input_array)
-        # KNN is already trained on for finding the closest images
-        closest_indices = nn_.kneighbors(feature.detach().numpy().reshape(1, -1),  n_neighbors = 10)[-1].flatten().tolist()
-        
-        closest_dict = dict()
-        for i, ind in enumerate(closest_indices):
-            closest_dict[i] =  dist_[ind]["image_path"]
-        
-        return closest_dict
-
-    def explain(self, input_array=None, image_path=None):
-        nn_ = self._load_pickle("visual_correspondence_knn.pkl")
-        dist_ = self._load_pickle("visual_correspondence_dist.pkl")
-        if image_path:
-            input_array = self.preprocess_function(image_path)
-        model_prediction, feature = self.feature_extractor(input_array)
-
         feature = feature.detach().numpy()
         # kNN already predicts the closest images. So we need to filter predicted class results first.
         # In the first stage, we select the N images having the lowest cosine distance
