@@ -10,8 +10,9 @@
 - GradCam++ : Implemented for classification problems, for PyTorch and Tensorflow/Keras.
 
 
-### Model Independent Explainers:
-- Visual Correspondence is implemented for PyTorch, see tutorials. Huge thanks Giang Nguyen for his support. ref: https://github.com/anguyen8/visual-correspondence-XAI
+#### Model Independent Explainers:
+- Visual Correspondence is implemented for PyTorch, see [tutorials](https://github.com/mburaksayici/Why/blob/main/tutorials/VisualCorrespondence.ipynb "tutorials")
+. Huge thanks Giang Nguyen for his support. ref: https://github.com/anguyen8/visual-correspondence-XAI
 
 
 #### Post-hoc explanations
@@ -28,6 +29,8 @@
 ```
 pip install Why-XAI==0.1.0
 ```
+
+___
 
 #### How to run? 
 
