@@ -10,9 +10,13 @@
 - GradCam++ : Implemented for classification problems, for PyTorch and Tensorflow/Keras.
 
 
+### Model Independent Explainers:
+- Visual Correspondence is implemented for PyTorch, see tutorials. Huge thanks Giang Nguyen for his support. ref: https://github.com/anguyen8/visual-correspondence-XAI
+
+
 #### Post-hoc explanations
 
-- Example(Prototype) based methods such as ProtoPNet and/or https://github.com/anguyen8/visual-correspondence-XAI
+- Example(Prototype) based methods such as ProtoPNet (To be done)
 
 
 #### Weights Analysis
