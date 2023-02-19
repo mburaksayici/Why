@@ -10,16 +10,8 @@ from .explain_utils import *
 class Explain:
     def __init__(self, model):
         self.model = model
-        self.model_framework = self._get_model_framework(model)
+        self.model_framework = get_model_framework(model)
 
-    def _get_model_framework(self, model):
-        model_class_str = str(type(model))
-        if "torch" in model_class_str:
-            return "pytorch"
-        elif "tensorflow" in model_class_str or "keras" in model_class_str:
-            return "tensorflow"
-        else:
-            return None
 
     @staticmethod
     def get_pythonic_cwd():
